@@ -41,7 +41,7 @@ const [receiptData, setReceiptData] = useState<ReceiptData>({})
   useEffect(() => {
   if (router.query.data) {
     try {
-      let rawData = router.query.data as string;
+      const rawData = router.query.data as string;
       console.log("✅ Raw data received from QR:", rawData);
 
       let decodedData;

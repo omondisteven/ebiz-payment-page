@@ -57,7 +57,8 @@ export async function POST(request: NextRequest, context: { params: { securityKe
   try {
     console.log({ amount, mpesaCode, phoneNumber });
     return NextResponse.json("ok", { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json("ok");
-  }
+  } catch (error) {
+  console.error('Callback error:', error);
+  return NextResponse.json("ok");
+}
 }

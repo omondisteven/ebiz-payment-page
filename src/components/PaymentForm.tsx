@@ -40,7 +40,7 @@ const Calculator = ({
         const sanitizedInput = input.replace(/[+\-*/]+$/, '');
         if (sanitizedInput) {
           // eslint-disable-next-line no-eval
-          const result = eval(sanitizedInput);
+          const result = Function('"use strict";return (' + sanitizedInput + ')')();
           setLiveResult(result.toString());
         } else {
           setLiveResult('0');
@@ -49,7 +49,8 @@ const Calculator = ({
         setLiveResult('0');
       }
     } catch (error) {
-      setLiveResult('Error');
+    console.error('Calculation error:', error);
+    setLiveResult('Error');
     }
   }, [input]);
 
@@ -147,12 +148,20 @@ function PaymentForm() {
   AgentId?: string;
   StoreNumber?: string;
   businessName?: string;
+  businessPhone?: string;
+  TransactionType?: string;
+  businessPromo1?: string;
+  businessPromo2?: string;
+  businessAddress?: string;
+  businessEmail?: string;
+  businessComment?: string;
   // Add other expected properties
 }
 const [data, setData] = useState<PaymentData>({});
 
   // QR code data processing
   useEffect(() => {
+    if (!searchParams) return; // Add this null check
     if (searchParams.get('data')) {
       try {
         const rawData = searchParams.get('data') as string;
@@ -160,12 +169,12 @@ const [data, setData] = useState<PaymentData>({});
         
         try {
           decodedData = decodeURIComponent(escape(atob(rawData)));
-        } catch (base64Err) {
-          console.warn("Base64 decode failed, trying URI decode");
-          decodedData = decodeURIComponent(rawData);
+        } catch {
+        console.warn("Base64 decode failed, trying URI decode");
+        decodedData = decodeURIComponent(rawData);
         }
 
-        let parsedData = JSON.parse(decodedData);
+        const parsedData = JSON.parse(decodedData);
         if (!parsedData.TransactionType) {
           toast.error("Missing transaction type in QR data");
           return;
