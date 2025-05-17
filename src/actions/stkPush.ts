@@ -45,7 +45,7 @@ export const sendStkPush = async (payload: StkPushPayload) => {
       PartyA: payload.mpesa_number,
       PartyB: process.env.MPESA_SHORTCODE,
       PhoneNumber: payload.mpesa_number,
-      CallBackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/mpesa/callback`,
+      CallBackURL: `${process.env.MPESA_CALLBACK_URL,
       AccountReference: payload.accountnumber || "Payment",
       TransactionDesc: payload.transactionDesc || "Payment"
     };
