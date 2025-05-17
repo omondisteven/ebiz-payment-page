@@ -249,7 +249,9 @@ const [data, setData] = useState<PaymentData>({});
     };
 
     try {
+      console.log('Sending STK Push with payload:', payload);
       const response = await sendStkPush(payload);
+      console.log('STK Push response:', response);
 
       if (response.error) throw new Error(response.error);
 

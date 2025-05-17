@@ -1,13 +1,19 @@
 // src/actions/stkPush.ts
 "use server";
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 interface StkPushPayload {
   mpesa_number: string;
   amount: number;
   accountnumber?: string;
   transactionDesc?: string;
+}
+
+interface MpesaErrorResponse {
+  errorCode?: string;
+  errorMessage?: string;
+  requestId?: string;
 }
 
 export const sendStkPush = async (payload: StkPushPayload) => {
@@ -45,7 +51,7 @@ export const sendStkPush = async (payload: StkPushPayload) => {
       PartyA: payload.mpesa_number,
       PartyB: process.env.MPESA_SHORTCODE,
       PhoneNumber: payload.mpesa_number,
-      CallBackURL: `${process.env.MPESA_CALLBACK_URL,
+      CallBackURL: `${process.env.MPESA_CALLBACK_URL}`,
       AccountReference: payload.accountnumber || "Payment",
       TransactionDesc: payload.transactionDesc || "Payment"
     };
@@ -60,12 +66,14 @@ export const sendStkPush = async (payload: StkPushPayload) => {
     );
 
     return { data: response.data };
-  } catch (error) {
+  } catch (err) {
+    const error = err as AxiosError<MpesaErrorResponse>;
     console.error("STK Push error:", error);
+    
     return { 
-      error: error.response?.data || 
-      error.message || 
-      "Failed to initiate payment" 
+      error: error.response?.data?.errorMessage || 
+            error.message || 
+            "Failed to initiate payment" 
     };
   }
 };
