@@ -63,7 +63,7 @@ export const sendStkPush = async (body: Params) => {
         PartyA: formattedPhone,
         PartyB: process.env.MPESA_SHORTCODE, //till number for tills
         PhoneNumber: formattedPhone,
-        CallBackURL: "https://mydomain.com/callback-url-path",
+        CallBackURL: "https://ebiz-payment-page-rd8g.vercel.app/callback-url-path",
         AccountReference: phoneNumber,
         TransactionDesc: "anything here",
       },
