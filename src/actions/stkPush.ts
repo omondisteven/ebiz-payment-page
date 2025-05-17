@@ -1,84 +1,71 @@
-// /src/actions/stkPush.ts
+// src/actions/stkPush.ts
 "use server";
- 
+
 import axios from "axios";
- 
-interface Params {
+
+interface StkPushPayload {
   mpesa_number: string;
-  name: string;
   amount: number;
+  accountnumber?: string;
+  transactionDesc?: string;
 }
 
- 
-export const sendStkPush = async (body: Params) => {
-  const mpesaEnv = process.env.MPESA_ENVIRONMENT;
-  const MPESA_BASE_URL =
-    mpesaEnv === "live"
-      ? "https://api.safaricom.co.ke"
-      : "https://sandbox.safaricom.co.ke";
- 
-  const { mpesa_number: phoneNumber, amount } = body;
+export const sendStkPush = async (payload: StkPushPayload) => {
   try {
-    //generate authorization token
-    const auth: string = Buffer.from(
-      `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
+    const mpesaEnv = process.env.MPESA_ENVIRONMENT;
+    const baseUrl = mpesaEnv === "live" 
+      ? "https://api.safaricom.co.ke" 
+      : "https://sandbox.safaricom.co.ke";
+
+    // 1. Get access token
+    const auth = Buffer.from(`${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`).toString("base64");
+    
+    const tokenResponse = await axios.get(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
+      headers: { Authorization: `Basic ${auth}` }
+    });
+
+    const token = tokenResponse.data.access_token;
+
+    // 2. Prepare STK push request
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:T.]/g, "")
+      .slice(0, 14);
+      
+    const password = Buffer.from(
+      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
     ).toString("base64");
- 
-    const resp = await axios.get(
-      `${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`,
-      {
-        headers: {
-          authorization: `Basic ${auth}`,
-        },
-      }
-    );
- 
-    const token = resp.data.access_token;
- 
-    const cleanedNumber = phoneNumber.replace(/\D/g, "");
- 
-    const formattedPhone = `254${cleanedNumber.slice(-9)}`;
- 
-    const date = new Date();
-    const timestamp =
-      date.getFullYear() +
-      ("0" + (date.getMonth() + 1)).slice(-2) +
-      ("0" + date.getDate()).slice(-2) +
-      ("0" + date.getHours()).slice(-2) +
-      ("0" + date.getMinutes()).slice(-2) +
-      ("0" + date.getSeconds()).slice(-2);
- 
-    const password: string = Buffer.from(
-      process.env.MPESA_SHORTCODE! + process.env.MPESA_PASSKEY + timestamp
-    ).toString("base64");
- 
+
+    const stkPayload = {
+      BusinessShortCode: process.env.MPESA_SHORTCODE,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: "CustomerPayBillOnline",
+      Amount: payload.amount.toFixed(2),
+      PartyA: payload.mpesa_number,
+      PartyB: process.env.MPESA_SHORTCODE,
+      PhoneNumber: payload.mpesa_number,
+      CallBackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/mpesa/callback`,
+      AccountReference: payload.accountnumber || "Payment",
+      TransactionDesc: payload.transactionDesc || "Payment"
+    };
+
+    console.log("STK Push payload:", stkPayload);
+
+    // 3. Send STK push
     const response = await axios.post(
-      `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
-      {
-        BusinessShortCode: process.env.MPESA_SHORTCODE,
-        Password: password,
-        Timestamp: timestamp,
-        TransactionType: "CustomerPayBillOnline", //CustomerBuyGoodsOnline - for till
-        Amount: amount,
-        PartyA: formattedPhone,
-        PartyB: process.env.MPESA_SHORTCODE, //till number for tills
-        PhoneNumber: formattedPhone,
-        CallBackURL: "https://ebiz-payment-page-rd8g.vercel.app/callback-url-path",
-        AccountReference: phoneNumber,
-        TransactionDesc: "anything here",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `${baseUrl}/mpesa/stkpush/v1/processrequest`,
+      stkPayload,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
+
     return { data: response.data };
   } catch (error) {
-    if (error instanceof Error) {
-      console.log(error);
-      return { error: error.message };
-    }
-    return { error: "something wrong happened" };
+    console.error("STK Push error:", error);
+    return { 
+      error: error.response?.data || 
+      error.message || 
+      "Failed to initiate payment" 
+    };
   }
 };
