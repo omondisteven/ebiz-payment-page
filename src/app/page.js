@@ -1,3 +1,4 @@
+// /src/app/page
 import PaymentForm from "@/components/PaymentForm";
  
 export default function Home() {
