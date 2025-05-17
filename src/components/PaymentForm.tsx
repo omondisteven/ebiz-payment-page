@@ -18,6 +18,7 @@ interface DataFromForm {
   name: string;
   amount: number;
   accountnumber?: string;
+
 }
 
 type PaymentStatus = 'pending' | 'success' | 'failed' | 'cancelled';
@@ -227,7 +228,7 @@ const [data, setData] = useState<PaymentData>({});
     setAmount(e.target.value);
   };
 
-  const handlePayment = async (payload: DataFromForm) => {
+  const handlePayment = async (p0: string, payload: DataFromForm) => {
     const transactionId = `tx_${Date.now()}`;
     console.log(`[${transactionId}] Initiating payment`);
 
@@ -335,7 +336,7 @@ const [data, setData] = useState<PaymentData>({});
       return;
     }
 
-    handlePayment({
+    handlePayment("/actions/stkPush",{
       mpesa_number: phoneNumber.trim(),
       name: "Payment",
       amount: Number(amount),
@@ -349,7 +350,7 @@ const [data, setData] = useState<PaymentData>({});
       return;
     }
 
-    handlePayment({
+    handlePayment("/actions/stkPush",{
       mpesa_number: phoneNumber.trim(),
       name: "Till Payment",
       amount: Number(amount),
@@ -363,7 +364,7 @@ const [data, setData] = useState<PaymentData>({});
       return;
     }
 
-    handlePayment({
+    handlePayment("/actions/stkPush",{
       mpesa_number: phoneNumber.trim(),
       name: "Send Money",
       amount: Number(amount),
@@ -377,7 +378,7 @@ const [data, setData] = useState<PaymentData>({});
       return;
     }
 
-    handlePayment({
+    handlePayment("/actions/stkPush",{
       mpesa_number: phoneNumber.trim(),
       name: "Withdraw",
       amount: Number(amount),
