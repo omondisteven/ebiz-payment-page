@@ -230,6 +230,13 @@ const [data, setData] = useState<PaymentData>({});
   const handlePayment = async (payload: DataFromForm) => {
     const transactionId = `tx_${Date.now()}`;
     console.log(`[${transactionId}] Initiating payment`);
+
+    const kenyanPhoneNumberRegex = /^(07\d{8}|01\d{8}|2547\d{8}|2541\d{8}|\+2547\d{8}|\+2541\d{8})$/;
+  
+    if (!kenyanPhoneNumberRegex.test(payload.mpesa_number)) {
+      toast.error("Invalid Mpesa number format.");
+      return;
+    }
     
     isCompleteRef.current = false;
     setPaymentStatus('pending');

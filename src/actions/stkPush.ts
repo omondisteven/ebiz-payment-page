@@ -1,4 +1,3 @@
-// src/actions/stkPush.ts
 "use server";
 
 import axios, { AxiosError } from "axios";
@@ -8,6 +7,7 @@ interface StkPushPayload {
   amount: number;
   accountnumber?: string;
   transactionDesc?: string;
+  transactionType?: string;
 }
 
 interface MpesaErrorResponse {
@@ -18,62 +18,83 @@ interface MpesaErrorResponse {
 
 export const sendStkPush = async (payload: StkPushPayload) => {
   try {
-    const mpesaEnv = process.env.MPESA_ENVIRONMENT;
-    const baseUrl = mpesaEnv === "live" 
-      ? "https://api.safaricom.co.ke" 
-      : "https://sandbox.safaricom.co.ke";
+    // Determine environment
+    const mpesaEnv = process.env.MPESA_ENVIRONMENT?.toLowerCase();
+    const baseUrl =
+      mpesaEnv === "live"
+        ? "https://api.safaricom.co.ke"
+        : "https://sandbox.safaricom.co.ke";
 
-    // 1. Get access token
-    const auth = Buffer.from(`${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`).toString("base64");
-    
-    const tokenResponse = await axios.get(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
-      headers: { Authorization: `Basic ${auth}` }
-    });
+    // Generate access token
+    const auth = Buffer.from(
+      `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
+    ).toString("base64");
+
+    const tokenResponse = await axios.get(
+      `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+      {
+        headers: { Authorization: `Basic ${auth}` },
+      }
+    );
 
     const token = tokenResponse.data.access_token;
 
-    // 2. Prepare STK push request
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[-:T.]/g, "")
-      .slice(0, 14);
-      
+    // Format timestamp
+    const date = new Date();
+    const timestamp =
+      date.getFullYear().toString() +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      String(date.getDate()).padStart(2, "0") +
+      String(date.getHours()).padStart(2, "0") +
+      String(date.getMinutes()).padStart(2, "0") +
+      String(date.getSeconds()).padStart(2, "0");
+
     const password = Buffer.from(
-      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
+      `${process.env.MPESA_SHORTCODE?.trim()}${process.env.MPESA_PASSKEY}${timestamp}`
     ).toString("base64");
 
+    // Format phone number (ensure it starts with 254)
+    const formattedPhone = payload.mpesa_number.replace(/\D/g, "").replace(/^0/, "254");
+
+    // Build STK payload
     const stkPayload = {
-      BusinessShortCode: process.env.MPESA_SHORTCODE,
+      BusinessShortCode: process.env.MPESA_SHORTCODE?.trim(),
       Password: password,
       Timestamp: timestamp,
-      TransactionType: "CustomerPayBillOnline",
-      Amount: payload.amount.toFixed(2),
-      PartyA: payload.mpesa_number,
-      PartyB: process.env.MPESA_SHORTCODE,
-      PhoneNumber: payload.mpesa_number,
-      CallBackURL: `${process.env.MPESA_CALLBACK_URL}`,
+      TransactionType: payload.transactionType || "CustomerPayBillOnline", // OR "CustomerBuyGoodsOnline"
+      Amount: Number(payload.amount), // Must be number
+      PartyA: formattedPhone,
+      PartyB: process.env.MPESA_SHORTCODE?.trim(),
+      PhoneNumber: formattedPhone,
+      CallBackURL: process.env.MPESA_CALLBACK_URL,
       AccountReference: payload.accountnumber || "Payment",
-      TransactionDesc: payload.transactionDesc || "Payment"
+      TransactionDesc: payload.transactionDesc || "Payment",
     };
 
-    console.log("STK Push payload:", stkPayload);
+    console.log("Sending STK Push payload:", stkPayload);
 
-    // 3. Send STK push
     const response = await axios.post(
       `${baseUrl}/mpesa/stkpush/v1/processrequest`,
       stkPayload,
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
+
+    console.log("STK Push API response:", response.data);
 
     return { data: response.data };
   } catch (err) {
     const error = err as AxiosError<MpesaErrorResponse>;
-    console.error("STK Push error:", error);
-    
-    return { 
-      error: error.response?.data?.errorMessage || 
-            error.message || 
-            "Failed to initiate payment" 
+    console.error("STK Push error:", error.response?.data || error.message);
+
+    return {
+      error:
+        error.response?.data?.errorMessage ||
+        error.message ||
+        "Failed to initiate STK Push",
     };
   }
 };
