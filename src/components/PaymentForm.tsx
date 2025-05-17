@@ -1,3 +1,4 @@
+// /src/components/PaymentForm.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -123,7 +124,7 @@ function PaymentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [transactionType, setTransactionType] = useState("");
-  const [data, setData] = useState<any>({});
+//   const [data, setData] = useState<any>({});
   const [phoneNumber, setPhoneNumber] = useState("254");
   const [amount, setAmount] = useState("");
   const [warning, setWarning] = useState<string | null>(null);
@@ -135,16 +136,27 @@ function PaymentForm() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
 
   const isCompleteRef = useRef(false);
-  const countdownRef = useRef(60);
   const activeIntervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
+  interface PaymentData {
+  PaybillNumber?: string;
+  AccountNumber?: string;
+  TillNumber?: string;
+  RecepientPhoneNumber?: string;
+  AgentId?: string;
+  StoreNumber?: string;
+  businessName?: string;
+  // Add other expected properties
+}
+const [data, setData] = useState<PaymentData>({});
 
   // QR code data processing
   useEffect(() => {
     if (searchParams.get('data')) {
       try {
-        let rawData = searchParams.get('data') as string;
-        let decodedData;
+        const rawData = searchParams.get('data') as string;
+        let decodedData; 
         
         try {
           decodedData = decodeURIComponent(escape(atob(rawData)));
@@ -243,8 +255,8 @@ function PaymentForm() {
           const queryResponse = await stkPushQuery(checkoutId);
           
           if (queryResponse.error) {
-            throw new Error(queryResponse.error);
-          }
+            throw queryResponse.error; // If it's already an Error object
+            }
 
           if (queryResponse.data) {
             if (queryResponse.data.ResultCode === "0") {

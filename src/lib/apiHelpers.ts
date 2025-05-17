@@ -1,7 +1,7 @@
 // /src/lib/apiHelpers.ts
 import { NextApiResponse } from 'next';
 
-export function successResponse(res: NextApiResponse, data: any) {
+export function successResponse(res: NextApiResponse, data: unknown) {
   return res.status(200).json({ success: true, data });
 }
 

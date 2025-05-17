@@ -17,7 +17,7 @@ export const sendStkPush = async (body: Params) => {
       ? "https://api.safaricom.co.ke"
       : "https://sandbox.safaricom.co.ke";
  
-  const { mpesa_number: phoneNumber, name, amount } = body;
+  const { mpesa_number: phoneNumber, amount } = body;
   try {
     //generate authorization token
     const auth: string = Buffer.from(

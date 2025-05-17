@@ -1,3 +1,4 @@
+// /src/actions/stkPushQuery.ts
 "use server";
  
 import axios from "axios";
@@ -59,7 +60,7 @@ export const stkPushQuery = async (reqId: string) => {
       return { error: error };
     }
  
-    const unknownError = error as any;
+    const unknownError = error as { message?: string };
     unknownError.message = "something wrong happened";
     return { error: unknownError };
   }

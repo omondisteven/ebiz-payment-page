@@ -6,7 +6,7 @@ import jsPDF from "jspdf";
 import QRCode from "react-qr-code";
 import toast from "react-hot-toast";
 import {
-  Mail, Phone, Globe, MapPin, Share2, Download, Copy, X, Contact, FileDown, Share
+  Mail, Phone, MapPin, Share2, Download, X, Share
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { toPng } from "html-to-image";
@@ -19,10 +19,24 @@ const ThankYouPage = () => {
   const router = useRouter();
   const receiptRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
-  const [receiptData, setReceiptData] = useState<any>({});
+  // const [receiptData, setReceiptData] = useState<any>({});
   const [receiptNumber, setReceiptNumber] = useState("");
   const [timestamp, setTimestamp] = useState("");
   const [showContact, setShowContact] = useState(false);
+  interface ReceiptData {
+  businessPhone?: string;
+  TransactionType?: string;
+  businessPromo1?: string;
+  businessPromo2?: string;
+  businessAddress?: string;
+  businessEmail?: string;
+  businessName?: string;
+  businessComment?: string;
+  Amount?: number;
+  Receipt?: string;
+  Timestamp?: string;
+}
+const [receiptData, setReceiptData] = useState<ReceiptData>({})
 
   useEffect(() => {
   if (router.query.data) {
@@ -253,7 +267,7 @@ const ThankYouPage = () => {
             currency: "KES",
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          }).format(receiptData.Amount)}
+          }).format(receiptData.Amount || 0)}
         </p>
         <QRCode
           value={JSON.stringify({
@@ -394,7 +408,7 @@ const ThankYouPage = () => {
                 </div>
                 <a 
                   href="#" 
-                  onClick={(e) => handleWhatsAppClick(receiptData.businessPhone, e)}
+                  onClick={(e) => receiptData.businessPhone && handleWhatsAppClick(receiptData.businessPhone, e)}
                   className="p-1 hover:bg-gray-100 rounded"
                 >
                   <FaWhatsapp className="w-5 h-5 text-green-500" />

@@ -1,4 +1,11 @@
+// /src/app/api/mpesa/callback.ts
 import { NextRequest, NextResponse } from "next/server";
+
+// Define proper types for the callback items
+interface CallbackItem {
+  Name: string;
+  Value: string | number;
+}
 
 // Accept context to access params
 export async function POST(request: NextRequest, context: { params: { securityKey: string } }) {
@@ -38,9 +45,10 @@ export async function POST(request: NextRequest, context: { params: { securityKe
 
   const body = data.Body.stkCallback.CallbackMetadata;
 
-  const amountObj = body.Item.find((obj: any) => obj.Name === "Amount");
-  const codeObj = body.Item.find((obj: any) => obj.Name === "MpesaReceiptNumber");
-  const phoneNumberObj = body.Item.find((obj: any) => obj.Name === "PhoneNumber");
+  // Now you can use the CallbackItem interface here
+  const amountObj = body.Item.find((obj: CallbackItem) => obj.Name === "Amount");
+  const codeObj = body.Item.find((obj: CallbackItem) => obj.Name === "MpesaReceiptNumber");
+  const phoneNumberObj = body.Item.find((obj: CallbackItem) => obj.Name === "PhoneNumber");
 
   const amount = amountObj?.Value;
   const mpesaCode = codeObj?.Value;
